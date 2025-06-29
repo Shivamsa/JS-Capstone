@@ -1,0 +1,1 @@
+const heading=document.getElementById("heading-1");
