@@ -3,9 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>My Task and Notes</title>
+    <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
-    <h1>Heading-1</h1>
+    <header id="main-header">
+        <div class="logo">My Project</div>
+
+        <button class="hamburger" id="hamburger-butoon">|||</button>
+
+        <nav id="desktop-nav">
+            <a href="#dashboard" id="nav-dashboard">Dashboard</a>
+            <a href="#tasks" id="nav-tasks">Tasks</a>
+            <a href="#notes" id="nav-notes">Notes</a>
+            <span id="user-info">User Info</span>
+            <button id="logout-btn" style="display: none;">LogOut</button>
+        </nav>
+    </header>
+
+    <main>
+        <section id="login-section" class="page-section">
+            <h2>Login</h2>
+
+            <form id="login-form" class="auth-form">
+                <input 
+                    id="login-email" 
+                    type="email" 
+                    placeholder="Email"
+                    required
+                />
+                <input 
+                    id="login-password" 
+                    type="password" 
+                    placeholder="Password"
+                    required
+                />
+                <button type="submit">Login</button>
+                <p>Don't have a acoount ?<a href="#signup">SignUp</a> </p>
+
+                <div id="login-errors" class="auth-error"></div>
+            </form>
+        </section>
+
+        <section id="signup-section" class="page-section">
+            <h2>SignUp</h2>
+            <form id="signup-form" class="auth-form">
+                <input
+                    id="signup-username"
+                    placeholder="Username"
+                    type="text"
+                    required
+                />
+                <input 
+                    id="signup-email" 
+                    type="email" 
+                    placeholder="Email"
+                    required
+                />
+                <input 
+                    id="signup-password" 
+                    type="password" 
+                    placeholder="Password"
+                    required
+                />
+                <button type="submit">Login</button>
+                <p>Already have a acoount ?<a href="#login">Login</a> </p>
+
+                <div id="signup-errors" class="auth-error"></div>
+            </form>
+        </section>
+
+    </main>
 </body>
+<script src="./app.js"></script>
 </html>
