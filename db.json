@@ -1,5 +1,30 @@
 {
-    "users":[],
-    "notes":[],
-    "tasks":[]
+  "users": [
+    {
+      "id": "ce15",
+      "username": "shivam",
+      "email": "s@s.com",
+      "password": "123"
+    },
+    {
+      "id": "a148",
+      "username": "s",
+      "email": "s1@s.com",
+      "password": "123"
+    },
+    {
+      "id": "ea75",
+      "username": "qw",
+      "email": "a@a.com",
+      "password": "123"
+    },
+    {
+      "id": "466c",
+      "username": "abc",
+      "email": "y@y.com",
+      "password": "123"
+    }
+  ],
+  "notes": [],
+  "tasks": []
 }
