@@ -2,7 +2,8 @@ let currentUser = null;
 
 const sections = {
     login: document.getElementById("login-section"),
-    signup: document.getElementById("signup-section")
+    signup: document.getElementById("signup-section"),
+    dashboard: document.getElementById("dashboard-section")
     // Tasks
     // Notes
 };
@@ -25,6 +26,14 @@ function renderHeader() {
         desktopNavLinks.querySelector("#nav-tasks").style.display = "none";
         desktopNavLinks.querySelector("#nav-notes").style.display = "none";        
     }
+
+    //Implement Logout button
+    logoutButton.addEventListener("click",()=>{
+        localStorage.removeItem('user');
+        window.location.hash = "#login";
+        currentUser = null;
+        route();
+    })
 }
 
 renderHeader();
@@ -132,7 +141,7 @@ function route() {
 
     if (currentUser) {
         const page = hash.substring(1) || "dashboard";
-
+        showsection(page);
         switch (page) {
             case "dashboard":
                 renderDashboard();
@@ -148,10 +157,54 @@ function route() {
         }
 
     } else {
-        if (hash === "signup") {
-            // showsignup()
+        if (hash === "#signup") {
+            showsection("signup");
         } else {
-            // showlogin()
+            showsection("login");
         }
     }
+}
+
+function showsection(name){
+
+    // remove the display:block property from each section
+    const value=Object.values(sections)
+    console.log(value);
+    value.forEach((item) => {
+        console.log(item)
+        item.classList.remove('active');
+        console.log(item)
+    });
+
+    //Only add active property to current visible section
+    if(sections[name]){
+        sections[name].classList.add('active');
+    }
+}
+
+function renderDashboard(){                    //we use backtick(``) to dynamically inject variables.
+    sections.dashboard.innerHTML=`                                            
+        <h2> Welcome to the Dashboard</h2>${JSON.parse(currentUser).username} !
+        <p>Choose either task or notes to get starte</p>
+    `;
+    
+    setActiveNavLink();
+}
+
+function setActiveNavLink(){
+    const hash=window.location.hash || "#dashboard";
+    
+    const navLinks = {
+        dashboard: document.getElementById("nav-dashboard"),
+        tasks: document.getElementById("nav-tasks"),
+        notes: document.getElementById("nav-notes")
+    }
+
+    const navData=Object.values(navLinks);
+    navData.forEach((item)=>{
+        item.classList.remove("active");
+        if(hash.includes(item.getAttribute("href"))){
+            item.classList.add("active");
+        }
+    })
 }
