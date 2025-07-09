@@ -3,9 +3,9 @@ let currentUser = null;
 const sections = {
     login: document.getElementById("login-section"),
     signup: document.getElementById("signup-section"),
-    dashboard: document.getElementById("dashboard-section")
-    // Tasks
-    // Notes
+    dashboard: document.getElementById("dashboard-section"),
+    tasks: document.getElementById("tasks-section"),
+    notes: document.getElementById("notes-section")
 };
 
 function renderHeader() {
@@ -147,7 +147,7 @@ function route() {
                 renderDashboard();
                 break;
             case "tasks":
-                rendertasks();
+                //renderTasks();
                 break;
             case "notes":
                 rendernotes();
@@ -208,3 +208,68 @@ function setActiveNavLink(){
         }
     })
 }
+
+function renderTasks(){
+    let user = [];
+    let tasks = [];
+
+    Promise.all([
+        fetch(`http://localhost:3000/users`).then(res => res.json()),
+        fetch(`http://localhost:3000/tasks?userId=${currentUser.id}`).then(res => res.json())
+    ]).then(([fetcheduser,fetchedtask]) => {
+        users=fetcheduser;
+        tasks=fetchedtask;
+    })
+    .catch((err)=>console.log("Some Error"))
+
+    const addtaskbutton = document.getElementById("add-task-btn");
+
+    addtaskbutton.addEventListener("click",()=>{
+        const modal = document.getElementById("task-modal");
+        const form = document.getElementById("add-task-form");
+
+        modal.style.display="flex";
+        form.addEventListener("submit",async (event)=>{
+            event.preventDefault();
+            const newTask ={
+                userId: currentUser.id,
+                title: document.getElementById("task-title").value,
+                description: document.getElementById("task-desc").value,
+                priority: document.getElementById("task-priority").value,
+                color: document.getElementById("task-color").value,
+                createdAt: new Date().toISOString()
+            };
+
+            await addTask(newTask)
+        });
+
+        //After the data store in the server, now storing in local storage.
+        async function addTask(task){
+            const savedtask= syncTaskToServer(task);
+            if(savedtask){
+                tasks.push(savedtask);
+                let storageTask = [...tasks] //Spread operator 
+                localStorage.setItem('tasks',JSON.stringify(storageTask))
+            }
+        }
+        
+        // Initially we are saving the data to server then we are storing in local storage.
+        async function syncTaskToServer(task){
+            try{
+                const res = await fetch(`http://localhost:3000/tasks`,{
+                    method:"POST",
+                    headers:{"Content-Type":"application/json"},
+                    body:JSON.stringify(task)
+                })
+
+                return await res.json();
+            }catch(err){
+                console.log("Failed to store in server",err);
+                return null;
+            }
+        }
+
+    })
+}
+
+renderTasks();
