@@ -209,67 +209,231 @@ function setActiveNavLink(){
     })
 }
 
-function renderTasks(){
-    let user = [];
-    let tasks = [];
+// function renderTasks(){
+//     let user = [];
+//     let tasks = [];
 
-    Promise.all([
-        fetch(`http://localhost:3000/users`).then(res => res.json()),
-        fetch(`http://localhost:3000/tasks?userId=${currentUser.id}`).then(res => res.json())
-    ]).then(([fetcheduser,fetchedtask]) => {
-        users=fetcheduser;
-        tasks=fetchedtask;
-    })
-    .catch((err)=>console.log("Some Error"))
+//     Promise.all([
+//         fetch(`http://localhost:3000/users`).then(res => res.json()),
+//         fetch(`http://localhost:3000/tasks?userId=${currentUser.id}`).then(res => res.json())
+//     ]).then(([fetcheduser,fetchedtask]) => {
+//         users=fetcheduser;
+//         tasks=fetchedtask;
+//     })
+//     .catch((err)=>console.log("Some Error"))
 
-    const addtaskbutton = document.getElementById("add-task-btn");
+//     const addtaskbutton = document.getElementById("add-task-btn");
 
-    addtaskbutton.addEventListener("click",()=>{
-        const modal = document.getElementById("task-modal");
-        const form = document.getElementById("add-task-form");
+//     addtaskbutton.addEventListener("click",()=>{
+//         const modal = document.getElementById("task-modal");
+//         const form = document.getElementById("add-task-form");
 
-        modal.style.display="flex";
-        form.addEventListener("submit",async (event)=>{
-            event.preventDefault();
-            const newTask ={
-                userId: currentUser.id,
-                title: document.getElementById("task-title").value,
-                description: document.getElementById("task-desc").value,
-                priority: document.getElementById("task-priority").value,
-                color: document.getElementById("task-color").value,
-                createdAt: new Date().toISOString()
-            };
+//         modal.style.display="flex";
+//         form.addEventListener("submit",async (event)=>{
+//             event.preventDefault();
+//             const newTask ={
+//                 userId: currentUser.id,
+//                 title: document.getElementById("task-title").value,
+//                 description: document.getElementById("task-desc").value,
+//                 priority: document.getElementById("task-priority").value,
+//                 color: document.getElementById("task-color").value,
+//                 createdAt: new Date().toISOString()
+//             };
 
-            await addTask(newTask)
-        });
+//             await addTask(newTask)
+//         });
 
-        //After the data store in the server, now storing in local storage.
-        async function addTask(task){
-            const savedtask= syncTaskToServer(task);
-            if(savedtask){
-                tasks.push(savedtask);
-                let storageTask = [...tasks] //Spread operator 
-                localStorage.setItem('tasks',JSON.stringify(storageTask))
-            }
-        }
+//         //After the data store in the server, now storing in local storage.
+//         async function addTask(task){
+//             const savedtask= syncTaskToServer(task);
+//             if(savedtask){
+//                 tasks.push(savedtask);
+//                 let storageTask = [...tasks] //Spread operator 
+//                 localStorage.setItem('tasks',JSON.stringify(storageTask))
+//             }
+//         }
         
-        // Initially we are saving the data to server then we are storing in local storage.
-        async function syncTaskToServer(task){
-            try{
-                const res = await fetch(`http://localhost:3000/tasks`,{
-                    method:"POST",
-                    headers:{"Content-Type":"application/json"},
-                    body:JSON.stringify(task)
-                })
+//         // Initially we are saving the data to server then we are storing in local storage.
+//         async function syncTaskToServer(task){
+//             try{
+//                 const res = await fetch(`http://localhost:3000/tasks`,{
+//                     method:"POST",
+//                     headers:{"Content-Type":"application/json"},
+//                     body:JSON.stringify(task)
+//                 })
 
-                return await res.json();
-            }catch(err){
-                console.log("Failed to store in server",err);
-                return null;
-            }
-        }
+//                 return await res.json();
+//             }catch(err){
+//                 console.log("Failed to store in server",err);
+//                 return null;
+//             }
+//         }
 
-    })
+//     })
+// }
+
+
+// CRUD(Create,Read,Update,Delete) operations for tasks
+function renderTasks(){
+    const {createTask,readTasks,updateTask,deleteTask}=tasksCRUD(currentUser.id);
+
+    let tasks = [];
+    readTasks().then((data) => {
+        tasks = data;
+        //renderList();
+    });
 }
 
-renderTasks();
+function renderList(){
+    const list=document.getElementById("tasks-list");
+    if(!list) return;
+
+    list.innerHTML = task.length ? tasks.map(taskItemHTML).join(""):"<p>No task Found</p>";
+}
+
+// this is used to create,read,update,delete operations
+function tasksCRUD(currentUserID){
+    const STORAGE_KEY = "tasks-" + currentUser.id;
+    const BASE_URL = "http://localhost:3000/tasks"
+    function loadTasksFromLocal(){
+        const storedTasks = localStorage.getItem(STORAGE_KEY);
+        return storedTasks ? JSON.parse(storedTasks) : [];
+    }
+
+    function saveTasksToLocal(tasks){
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+    }
+
+    //createTask
+    async function createTask(task){
+        try{
+            task.userId=currentUserID;
+            task.completed=false;
+            task.createdAt=new Date().toISOString();
+            const res = await fetch(`${BASE_URL}`,{
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify(task)
+                });
+
+                const savedtask = await res.json();
+                const localTasks = loadTasksFromLocal();
+                localTasks.push(savedtask);
+                saveTasksToLocal(localTasks);
+
+        }catch(err){
+            console.log("Failed to store in server",err);
+            return null;
+        }
+    }
+
+    async function readTasks(){
+        try{
+            const res = await fetch(`${BASE_URL}?userId=${currentUserID}`);
+            const tasks = await res.json();
+            saveTasksToLocal(tasks);
+            return tasks;
+            }catch(err){
+                console.log("Failed to fetch from server",err);
+                return loadTasksFromLocal();  //fallback to local storage
+            }
+    }
+
+    //UpdateTask
+    async function updateTask(taskId,updatedtask){
+        try{
+            const res = await fetch(`${BASE_URL}/${taskId}`,{
+                method:"PATCH",         //PUT will replace the entire object and PATCH will update only the changed fields
+                headers:{"Content-Type":"application/json"},
+                body:JSON.stringify(updatedtask)
+            });
+            const result = await res.json();
+            if(!result){
+                alert("Task not found or Update failed");
+                return null;
+            }
+
+            let localTasks = loadTasksFromLocal();
+            localTasks = localTasks.map((item)=>{
+                if(item.id===taskId){
+                    return {...item,...updatedtask};
+                }
+                return item;
+            });
+            saveTasksToLocal(localTasks);
+            return true;
+
+        }catch(err){
+            console.log("Failed to update task",err);
+            return null;
+        }
+    }
+
+    //Delete Tasks
+    async function deleteTask(taskId){
+        try{
+            const res = await fetch(`${BASE_URL}/${taskId}`,{
+                method:"DELETE",
+                headers:{"Content-Type":"application/json"},
+                });
+                
+                if(!res.ok)
+                {
+                    throw new Error("Task not found or Delete failed");
+                }
+                let localTasks = loadTasksFromLocal();
+                localTasks = localTasks.filter((item)=>item.id!==taskId);
+                saveTasksToLocal(localTasks);
+                return true;
+                }catch(err){
+                    console.log("Failed to delete task",err);
+                    return null;
+                }
+        }
+
+        return{
+            createTask,
+            readTasks,
+            updateTask,
+            deleteTask
+        }
+}
+
+// this is used to render cards at each entry of tasks
+const taskItemHTML = (task)=> {
+  return `
+        <div class="task-item" data-color="${task.color}">
+            <div class="task-header">
+                <h3>${escapeHTML(task.title)}</h3>
+                <div>
+                    <button id="task-edit-${
+                      task.id
+                    }" class="task-edit-btn">✏️</button>
+                    <input type="checkbox" id="task-check-${task.id}" ${task.completed ? "checked" : " "} />
+                </div>
+            </div>
+            <div class="task-description">${markdownToHTML(
+              task.description
+            )}</div>
+            <div class="task-footer">
+                <span>${new Date(task.createdAt).toLocaleDateString()}</span>
+                <button id="task-del-${task.id}">🗑️</button>
+            </div>
+        </div>
+    `;
+}
+
+//Below function is used to change special symbols into an escaped HTML format
+// This is used to prevent XSS attacks
+function escapeHTML(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// this function is used to convert markdown to HTML using EasyMDE
+// it checks if the EasyMDE editor is initialized before converting
+function markdownToHTML(markdown) {
+    if (!window.easyMDETask) return markdown; // Ensure editor is initialized
+    return window.easyMDETask.markdown(markdown);
+}
